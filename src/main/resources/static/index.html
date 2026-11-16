@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学生家教平台</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f0f2f5; color: #333; }
+
+        .navbar { background: #fff; padding: 15px 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 20px; color: #1890ff; }
+
+        /* 登录区域 */
+        #auth-section { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #auth-section h2 { text-align: center; margin-bottom: 20px; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        input, select, textarea { flex: 1; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; outline: none; font-size: 14px; }
+        textarea { resize: vertical; min-height: 60px; }
+        button { padding: 10px 16px; background: #1890ff; color: #fff; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        button:hover { background: #40a9ff; }
+
+        /* 主体布局 */
+        .container { display: flex; max-width: 1200px; margin: 20px auto; gap: 20px; height: calc(100vh - 100px); display: none; }
+        .left-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card h3 { margin-bottom: 15px; font-size: 16px; border-left: 4px solid #1890ff; padding-left: 10px; }
+
+        /* 列表项 */
+        .list-item { border-bottom: 1px solid #f0f0f0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; border-radius: 4px;}
+        .list-item:hover { background-color: #f9f9f9; cursor: pointer; }
+        .item-info h4 { color: #333; margin-bottom: 5px; }
+        .item-info p { color: #888; font-size: 13px; }
+        .price { color: #f5222d; font-weight: bold; font-size: 18px; }
+
+        /* 聊天窗口 */
+        .right-panel { flex: 1.2; background: #fff; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .chat-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
+        .chat-header-top { display: flex; justify-content: space-between; align-items: center; }
+        .status { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #ff4d4f; color: #fff; }
+        .status.online { background: #52c41a; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f5f5f5; }
+        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .message.mine { align-items: flex-end; }
+        .message.theirs { align-items: flex-start; }
+        .bubble { max-width: 70%; padding: 10px 15px; border-radius: 8px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+        .message.mine .bubble { background: #95ec69; color: #000; border-radius: 8px 0 8px 8px; }
+        .message.theirs .bubble { background: #fff; color: #333; border-radius: 0 8px 8px 8px; }
+        .chat-input-area { padding: 15px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; }
+
+        /* 详情弹窗 */
+        .modal-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; width: 400px; border-radius: 8px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-content h3 { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .modal-content p { margin-bottom: 10px; color: #555; font-size: 14px; line-height: 1.6; }
+        .btn-close { background: #ccc; margin-top: 10px; width: 100%; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🎓 大学生家教平台</h1>
+    <div id="user-info" class="hidden">
+        当前身份：<b id="my-name"></b>
+        <span style="color:#1890ff; margin-left:10px;">(我的ID: <b id="my-id-display"></b>)</span>
+        <button onclick="logout()" style="padding:4px 8px; margin-left:10px; background:#ff4d4f;">退出</button>
+    </div>
+</div>
+
+<!-- 登录/注册 -->
+<div id="auth-section">
+    <h2>登录 / 注册</h2>
+    <div class="form-row"><input type="text" id="auth-username" placeholder="用户名"></div>
+    <div class="form-row"><input type="password" id="auth-password" placeholder="密码"></div>
+    <div class="form-row">
+        <select id="auth-role">
+            <option value="TEACHER">我是老师</option>
+            <option value="PARENT">我是家长</option>
+        </select>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button onclick="login()" style="flex: 1;">登录</button>
+        <button onclick="register()" style="flex: 1; background: #52c41a;">注册</button>
+    </div>
+</div>
+
+<!-- 主界面 -->
+<div class="container" id="main-section">
+    <div class="left-panel">
+        <!-- 老师专属 -->
+        <div class="card hidden" id="teacher-form-card">
+            <h3>完善我的老师资料</h3>
+            <div class="form-row"><input type="text" id="t-name" placeholder="姓名"></div>
+            <div class="form-row"><input type="text" id="t-school" placeholder="学校"></div>
+            <div class="form-row"><input type="text" id="t-subject" placeholder="科目"></div>
+            <div class="form-row"><input type="text" id="t-grade" placeholder="年级"></div>
+            <div class="form-row"><input type="number" id="t-price" placeholder="时薪"></div>
+            <div class="form-row"><textarea id="t-intro" placeholder="自我介绍"></textarea></div>
+            <button style="width: 100%;" onclick="saveTeacherProfile()">保存资料</button>
+        </div>
+
+        <!-- 家长专属 -->
+        <div class="card hidden" id="parent-form-card">
+            <h3>发布家教需求</h3>
+            <div class="form-row"><input type="text" id="p-name" placeholder="称呼"></div>
+            <div class="form-row"><input type="text" id="p-subject" placeholder="科目"></div>
+            <div class="form-row"><input type="text" id="p-grade" placeholder="年级"></div>
+            <div class="form-row"><input type="number" id="p-budget" placeholder="预算"></div>
+            <div class="form-row"><textarea id="p-req" placeholder="具体要求"></textarea></div>
+            <button style="width: 100%; background: #52c41a;" onclick="saveParentDemand()">发布需求</button>
+        </div>
+
+        <!-- 大厅 -->
+        <div class="card" style="flex: 1; overflow-y: auto;">
+            <h3 id="hall-title">大厅</h3>
+            <div class="form-row" style="margin-bottom: 15px;">
+                <input type="text" id="search-subject" placeholder="科目">
+                <input type="text" id="search-grade" placeholder="年级">
+                <button onclick="loadHallData()">搜索</button>
+            </div>
+            <div id="hall-content"></div>
+        </div>
+    </div>
+
+    <!-- 聊天室 -->
+    <div class="right-panel">
+        <div class="chat-header">
+            <div class="chat-header-top">
+                <b>在线私信</b>
+                <div>
+                    <span class="status" id="conn-status">未连接</span>
+                    <button onclick="connectWebSocket()" style="padding: 4px 10px; font-size: 12px;">连接/刷新</button>
+                </div>
+            </div>
+            <div style="font-size: 13px; color: #555;">
+                当前正在与 ID 为 <input type="number" id="to-id" style="width: 60px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;"> 的用户聊天
+                <button onclick="loadHistory()" style="padding: 3px 8px; font-size: 12px; background: #faad14;">拉取聊天记录</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-box">
+            <div style="text-align:center; color:#999; margin-top:20px;">暂无聊天记录</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="msg-input" placeholder="按回车发送..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal-mask" id="detail-modal">
+    <div class="modal-content">
+        <h3 id="modal-title">详情</h3>
+        <div id="modal-body"></div>
+        <button class="btn-close" onclick="closeModal()">关闭</button>
+    </div>
+</div>
+
+<script>
+    let currentUserId = null;
+    let currentRole = null;
+
+    // ================= 1. 登录与注册 =================
+    function register() {
+        const data = {
+            username: document.getElementById('auth-username').value,
+            password: document.getElementById('auth-password').value,
+            role: document.getElementById('auth-role').value
+        };
+        fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+            .then(res => res.json()).then(res => alert(res.message));
+    }
+
+    function login() {
+        const data = {
+            username: document.getElementById('auth-username').value,
+            password: document.getElementById('auth-password').value
+        };
+        fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+            .then(res => res.json()).then(res => {
+            if (res.success) {
+                currentUserId = res.userId;
+                currentRole = res.role;
+
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-section').style.display = 'flex';
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('my-name').innerText = res.username;
+                document.getElementById('my-id-display').innerText = res.userId; // 显示我的ID
+
+                if (currentRole === 'TEACHER') {
+                    document.getElementById('teacher-form-card').classList.remove('hidden');
+                    document.getElementById('hall-title').innerText = '🔍 家长需求大厅';
+                } else {
+                    document.getElementById('parent-form-card').classList.remove('hidden');
+                    document.getElementById('hall-title').innerText = '🔍 老师资源大厅';
+                }
+                loadHallData();
+            } else {
+                alert(res.message);
+            }
+        });
+    }
+
+    function logout() { location.reload(); }
+
+    // ================= 2. 大厅数据 =================
+    function loadHallData() {
+        const sub = document.getElementById('search-subject').value.trim();
+        const grd = document.getElementById('search-grade').value.trim();
+        const contentDiv = document.getElementById('hall-content');
+        contentDiv.innerHTML = '加载中...';
+
+        const apiUrl = currentRole === 'TEACHER'
+            ? `/api/parents?subject=${sub}&grade=${grd}`
+            : `/api/teachers?subject=${sub}&grade=${grd}`;
+
+        fetch(apiUrl).then(res => res.json()).then(data => {
+            if (data.length === 0) { contentDiv.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">暂无数据</p>'; return; }
+
+            let html = '';
+            data.forEach(item => {
+                if (currentRole === 'TEACHER') {
+                    html += `
+                        <div class="list-item" onclick='showParentDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                            <div class="item-info">
+                                <h4>${item.name} <span style="font-size:12px;color:#888;">(家长 ID: ${item.id})</span></h4>
+                            </div>
+                            <div class="price">预算 ￥${item.budget}</div>
+                        </div>`;
+                } else {
+                    html += `
+                        <div class="list-item" onclick='showTeacherDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                            <div class="item-info">
+                                <h4>${item.name} <span style="font-size:12px;color:#888;">(老师 ID: ${item.id})</span></h4>
+                            </div>
+                            <div class="price">￥${item.pricePerHour}</div>
+                        </div>`;
+                }
+            });
+            contentDiv.innerHTML = html;
+        });
+    }
+
+    // ================= 3. 详情与发起聊天 =================
+    function showTeacherDetail(t) {
+        document.getElementById('modal-title').innerText = "老师详细资料";
+        document.getElementById('modal-body').innerHTML = `
+                <p><b>姓名：</b>${t.name} (ID: ${t.id})</p>
+                <p><b>学校：</b>${t.school || '未填写'}</p>
+                <p><b>可教：</b>${t.subject} (${t.grade})</p>
+                <p><b>期望时薪：</b><span style="color:red;">￥${t.pricePerHour}</span></p>
+                <p><b>自我介绍：</b>${t.intro || '暂无'}</p>
+                <button onclick="startChat(${t.id}, '${t.name}')" style="width:100%; margin-top:15px; background:#52c41a;">发私信联系 TA</button>
+            `;
+        document.getElementById('detail-modal').style.display = 'flex';
+    }
+
+    function showParentDetail(p) {
+        document.getElementById('modal-title').innerText = "家长需求详情";
+        document.getElementById('modal-body').innerHTML = `
+                <p><b>称呼：</b>${p.name} (ID: ${p.id})</p>
+                <p><b>需求：</b>${p.demandSubject} (${p.demandGrade})</p>
+                <p><b>预算：</b><span style="color:red;">￥${p.budget}</span></p>
+                <p><b>要求：</b>${p.requirement || '暂无'}</p>
+                <button onclick="startChat(${p.id}, '${p.name}')" style="width:100%; margin-top:15px; background:#52c41a;">发私信联系 TA</button>
+            `;
+        document.getElementById('detail-modal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
+
+    function startChat(targetId, name) {
+        closeModal();
+        document.getElementById('to-id').value = targetId;
+        loadHistory(); // 自动加载历史记录
+    }
+
+    // ================= 4. 聊天与历史记录 =================
+    let ws = null;
+    function connectWebSocket() {
+        ws = new WebSocket(`ws://localhost:8080/ws/chat?userId=${currentUserId}`);
+        ws.onopen = () => {
+            document.getElementById('conn-status').innerText = "已连接"; document.getElementById('conn-status').className = "status online";
+            loadHistory(); // 连接成功后拉取一次记录
+        };
+        ws.onmessage = (event) => addMessage("对方", event.data, "theirs");
+        ws.onclose = () => { document.getElementById('conn-status').innerText = "未连接"; document.getElementById('conn-status').className = "status"; };
+    }
+
+    // 核心：拉取历史记录
+    function loadHistory() {
+        const toId = document.getElementById('to-id').value;
+        if (!toId || !currentUserId) return;
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '加载历史记录...';
+
+        fetch(`/api/messages?userId1=${currentUserId}&userId2=${toId}`)
+            .then(res => res.json())
+            .then(data => {
+                chatBox.innerHTML = ''; // 清空
+                if (data.length === 0) {
+                    chatBox.innerHTML = `<div style="text-align:center; color:#999; margin-top:20px;">暂无聊天记录</div>`;
+                    return;
+                }
+                data.forEach(msg => {
+                    // 如果发送者是我
+                    if (msg.fromUserId === parseInt(currentUserId)) {
+                        addMessage("我", msg.content, "mine");
+                    } else {
+                        addMessage("对方", msg.content, "theirs");
+                    }
+                });
+            });
+    }
+
+    function sendMessage() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) { alert("请先点击右上角【连接/刷新】！"); return; }
+        const toId = document.getElementById('to-id').value;
+        const content = document.getElementById('msg-input').value.trim();
+        if (!content || !toId) return;
+
+        ws.send(`${currentUserId}|USER|${toId}|USER|${content}`);
+        addMessage("我", content, "mine");
+        document.getElementById('msg-input').value = '';
+    }
+
+    function addMessage(sender, text, type) {
+        const chatBox = document.getElementById('chat-box');
+        if(chatBox.innerHTML.includes('暂无聊天记录') || chatBox.innerHTML.includes('加载历史记录')) {
+            chatBox.innerHTML = '';
+        }
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type}`;
+        msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+</body>
+</html>
