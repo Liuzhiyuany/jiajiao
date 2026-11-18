@@ -19,6 +19,7 @@ public class Teacher {
     private String school; // 新加的学校字段
     private String location;  // 授课区域
     private String teachMode; // 线上/线下
+    private Long userId;
 
     public Teacher() {}
 
@@ -52,4 +53,7 @@ public class Teacher {
 
     public String getSchool() { return school; }
     public void setSchool(String school) { this.school = school; }
+
+    public Long getUserId(){return userId;}
+    public void setUserId(Long userId){this.userId = userId; }
 }

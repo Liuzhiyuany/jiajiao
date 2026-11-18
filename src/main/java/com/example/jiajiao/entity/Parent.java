@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 public class Parent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer status = 1;// 需求状态：1表示找老师中，0表示已结束（下架）
     private Long id; // 家长的唯一编号
     private String name; // 家长称呼
     private String demandSubject; // 需求科目（如：数学）
@@ -18,8 +19,11 @@ public class Parent {
     private String requirement;
     private String location;  // 家庭所在区域
     private String teachMode; // 线上/线下
+    private Long userId;
 
     public Parent() {}
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     // 加上对应的 Get/Set 方法
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
@@ -46,4 +50,7 @@ public class Parent {
 
     public String getContactPhone() { return contactPhone; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+
+    public Long getUserId(){return userId;}
+    public void setUserId(Long userId){this.userId = userId; }
 }
