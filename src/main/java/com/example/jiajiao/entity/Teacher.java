@@ -17,8 +17,17 @@ public class Teacher {
     private String intro;
     private String contactPhone;
     private String school; // 新加的学校字段
+    private String location;  // 授课区域
+    private String teachMode; // 线上/线下
 
     public Teacher() {}
+
+    // 加上对应的 Get/Set 方法
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getTeachMode() { return teachMode; }
+    public void setTeachMode(String teachMode) { this.teachMode = teachMode; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

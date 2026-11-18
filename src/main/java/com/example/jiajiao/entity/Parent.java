@@ -16,8 +16,16 @@ public class Parent {
     private Double budget; // 预算（时薪）
     private String contactPhone; // 联系电话
     private String requirement;
+    private String location;  // 家庭所在区域
+    private String teachMode; // 线上/线下
 
     public Parent() {}
+    // 加上对应的 Get/Set 方法
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getTeachMode() { return teachMode; }
+    public void setTeachMode(String teachMode) { this.teachMode = teachMode; }
     public String getRequirement() { return requirement; }
     public void setRequirement(String requirement) { this.requirement = requirement; }
 
