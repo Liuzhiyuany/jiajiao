@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>致学优教 - 大学生家教撮合平台</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,10 +22,7 @@
         body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
         /* ================= 登录页 ================= */
-        #auth-page {
-            position: fixed; inset: 0; background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
-            display: flex; justify-content: center; align-items: center; z-index: 1000;
-        }
+        #auth-page { position: fixed; inset: 0; background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .auth-card { background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); width: 100%; max-width: 420px; }
         .auth-card h2 { text-align: center; margin-bottom: 30px; font-size: 28px; font-weight: 800; color: var(--primary); letter-spacing: -1px;}
         .form-group { margin-bottom: 20px; position: relative; }
@@ -39,8 +36,6 @@
 
         /* ================= 主应用布局 ================= */
         #app-layout { display: none; width: 100%; height: 100%; }
-
-        /* 侧边栏 */
         .sidebar { width: 260px; background: var(--bg-sidebar); display: flex; flex-direction: column; z-index: 10; }
         .sidebar-header { padding: 30px 24px; font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); letter-spacing: -0.5px;}
         .nav-menu { flex: 1; padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -51,7 +46,6 @@
         .sidebar-footer { padding: 24px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 16px; }
         .user-info { font-size: 14px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px;}
 
-        /* 主内容区 */
         .main-content { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; background: var(--bg-body); }
         .page { display: none; flex: 1; padding: 40px; overflow-y: auto; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
@@ -62,7 +56,6 @@
         .search-bar { display: flex; gap: 12px; }
         .search-bar input { padding-left: 20px; border-radius: 30px; width: 160px; background: #fff; }
 
-        /* 卡片网格 */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
         .card { background: #fff; border-radius: 16px; padding: 24px; border: 1px solid var(--border); transition: 0.3s; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border-color: var(--primary); transform: translateY(-4px); }
@@ -71,7 +64,6 @@
         .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .tag { background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #475569; }
 
-        /* 表单页 */
         .form-container { max-width: 700px; background: #fff; padding: 40px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);}
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-grid textarea { grid-column: span 2; }
@@ -97,10 +89,60 @@
         .chat-input-box input { border-radius: 30px; padding-left: 24px; background: var(--bg-body); border: none; }
         .chat-input-box button { border-radius: 50%; width: 52px; height: 52px; padding: 0; flex-shrink: 0;}
 
-        /* 弹窗 */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; padding: 40px; border-radius: 24px; width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         .hidden { display: none !important; }
+
+        /* 手机端返回按钮默认隐藏 */
+        .mobile-back-btn { display: none; }
+
+        /* =========================================
+           手机端响应式适配 (屏幕宽度小于 768px 时生效)
+           ========================================= */
+        @media (max-width: 768px) {
+            /* 1. 整体布局改为上下结构 */
+            #app-layout { flex-direction: column; }
+
+            /* 2. 侧边栏变成底部导航栏 */
+            .sidebar {
+                width: 100%; height: 65px; flex-direction: row;
+                position: fixed; bottom: 0; left: 0;
+                border-top: 1px solid rgba(255,255,255,0.1); z-index: 999;
+            }
+            .sidebar-header, .sidebar-footer { display: none; }
+            .nav-menu { flex-direction: row; padding: 0; width: 100%; justify-content: space-around; align-items: center; gap: 0;}
+            .nav-item { flex-direction: column; padding: 8px 0; font-size: 11px; gap: 4px; border-radius: 0; flex: 1; text-align: center; justify-content: center;}
+            .nav-item i { font-size: 20px; }
+            .nav-item.active { background: transparent; color: var(--primary); box-shadow: none; }
+
+            /* 3. 主内容区留出底部导航的高度 */
+            .main-content { padding-bottom: 65px; }
+            .page { padding: 20px 15px; }
+
+            /* 4. 资源大厅改为单列卡片 */
+            .grid { grid-template-columns: 1fr; gap: 16px; }
+            .search-bar { flex-direction: column; width: 100%; gap: 8px; }
+            .search-bar input { width: 100%; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+
+            /* 5. 表单改为单列 */
+            .form-grid { grid-template-columns: 1fr; gap: 12px;}
+            .form-grid textarea { grid-column: span 1; }
+            .form-container { padding: 20px; }
+
+            /* 6. 聊天页面手机适配 */
+            #page-chat { flex-direction: column; }
+            .chat-list { width: 100%; height: 100%; border-right: none; }
+            .chat-window { width: 100%; height: 100%; display: none; }
+            #page-chat.show-chat .chat-list { display: none; }
+            #page-chat.show-chat .chat-window { display: flex; }
+
+            /* 显示返回按钮 */
+            .mobile-back-btn { display: inline-flex; }
+            .chat-header { padding: 15px; flex-direction: column; align-items: flex-start; gap: 10px;}
+            .chat-input-box { padding: 15px; }
+            .chat-area { padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -119,7 +161,6 @@
 
 <!-- 主布局 -->
 <div id="app-layout">
-    <!-- 暗黑风侧边栏 -->
     <aside class="sidebar">
         <div class="sidebar-header"><i class="fa-solid fa-graduation-cap"></i> 致学优教</div>
         <div class="nav-menu">
@@ -139,9 +180,7 @@
         </div>
     </aside>
 
-    <!-- 内容区 -->
     <main class="main-content">
-
         <!-- 1. 资源大厅 -->
         <div id="page-hall" class="page active">
             <div class="page-header">
@@ -187,28 +226,27 @@
             </div>
         </div>
 
-        <!-- 3. 消息中心 (双栏) -->
+        <!-- 3. 消息中心 -->
         <div id="page-chat" class="page">
-            <!-- 左侧联系人 -->
             <div class="chat-list">
                 <div class="chat-list-header">最近联系人</div>
-                <div id="contact-list">
-                    <div style="padding:24px; color:#94a3b8; text-align:center; font-size:14px;">暂无联系人</div>
-                </div>
+                <div id="contact-list"></div>
             </div>
 
-            <!-- 右侧聊天窗口 -->
             <div class="chat-window">
                 <div class="chat-header">
+                    <!-- 手机端返回按钮 -->
+                    <button class="btn mobile-back-btn" style="padding: 6px 12px; font-size: 13px; background: #f1f5f9; color: #333;" onclick="backToContacts()">
+                        <i class="fa-solid fa-arrow-left"></i> 返回
+                    </button>
+
                     <div>
-                        <span style="font-weight:800; font-size:20px; color:var(--text-main);">私信对话</span>
-                        <span id="current-chat-target" style="font-size: 13px; color: var(--primary); margin-left: 12px; background: #e0e7ff; padding: 4px 10px; border-radius: 6px; font-weight: 600;">
-                                未选择联系人
-                            </span>
+                        <span style="font-weight:800; font-size:18px; color:var(--text-main);">私信对话</span>
+                        <span id="current-chat-target" style="font-size: 12px; color: var(--primary); margin-left: 8px; background: #e0e7ff; padding: 4px 8px; border-radius: 6px; font-weight: 600;">未选择</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <span id="conn-status" style="color:#ef4444; font-size:13px; font-weight:600;">未连接</span>
-                        <button class="btn" style="padding:8px 16px; font-size:13px; background:#f1f5f9; color:#333;" onclick="connectWebSocket()">连接/刷新</button>
+                    <div style="display:flex; align-items:center; gap:12px; margin-top: 10px;">
+                        <span id="conn-status" style="color:#ef4444; font-size:12px; font-weight:600;">未连接</span>
+                        <button class="btn" style="padding:6px 12px; font-size:12px; background:#f1f5f9; color:#333;" onclick="connectWebSocket()">连接/刷新</button>
                     </div>
                 </div>
                 <div class="chat-area" id="chat-box">
@@ -221,7 +259,6 @@
                 </div>
             </div>
         </div>
-
     </main>
 </div>
 
@@ -240,9 +277,13 @@
 <script>
     let currentUserId = null;
     let currentRole = null;
-    let contacts = []; // 存储最近联系人
+    let contacts = [];
 
-    // ================= 1. 导航控制 =================
+    // 手机端返回列表
+    function backToContacts() {
+        document.getElementById('page-chat').classList.remove('show-chat');
+    }
+
     function switchPage(pageId, element) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -250,7 +291,7 @@
         if(element) element.classList.add('active');
     }
 
-    // ================= 2. 登录注册 =================
+    // 登录注册
     function register() {
         const data = {
             username: document.getElementById('auth-username').value,
@@ -280,12 +321,12 @@
 
                 if (currentRole === 'TEACHER') {
                     document.getElementById('teacher-form').classList.remove('hidden');
-                    document.getElementById('nav-form-text').innerText = '完善老师资料';
-                    document.getElementById('hall-title').innerText = '📢 家长需求大厅';
+                    document.getElementById('nav-form-text').innerText = '完善资料';
+                    document.getElementById('hall-title').innerText = '📢 家长大厅';
                 } else {
                     document.getElementById('parent-form').classList.remove('hidden');
-                    document.getElementById('nav-form-text').innerText = '发布家教需求';
-                    document.getElementById('hall-title').innerText = '🏆 优质老师库';
+                    document.getElementById('nav-form-text').innerText = '发布需求';
+                    document.getElementById('hall-title').innerText = '🏆 老师大厅';
                 }
                 loadHallData();
                 loadContacts();
@@ -297,7 +338,7 @@
 
     function logout() { location.reload(); }
 
-    // ================= 3. 大厅数据 =================
+    // 大厅数据
     function loadHallData() {
         const sub = document.getElementById('search-subject').value.trim();
         const grd = document.getElementById('search-grade').value.trim();
@@ -309,12 +350,11 @@
             : `/api/teachers?subject=${sub}&grade=${grd}`;
 
         fetch(apiUrl).then(res => res.json()).then(data => {
-            if (data.length === 0) { contentDiv.innerHTML = '<div style="text-align:center; width:100%; padding:60px; color:#94a3b8; font-size:16px;">暂无符合条件的数据</div>'; return; }
+            if (data.length === 0) { contentDiv.innerHTML = '<div style="text-align:center; width:100%; padding:60px; color:#94a3b8; font-size:16px;">暂无数据</div>'; return; }
 
             let html = '';
             data.forEach(item => {
                 if (currentRole === 'TEACHER') {
-                    // 家长需求卡片
                     html += `
                         <div class="card" onclick='showParentDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                             <div class="card-title">
@@ -329,7 +369,6 @@
                             </div>
                         </div>`;
                 } else {
-                    // 老师资源卡片
                     html += `
                         <div class="card" onclick='showTeacherDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                             <div class="card-title">
@@ -349,24 +388,22 @@
         });
     }
 
-    // ================= 4. 详情与交互 =================
+    // 详情
     function showTeacherDetail(t) {
         document.getElementById('modal-title').innerText = "老师详细资料";
         document.getElementById('modal-body').innerHTML = `
                 <p><b>姓名：</b>${t.name}</p>
-                <p><b>账号ID(userId)：</b>${t.userId}</p>
                 <p><b>学校：</b>${t.school || '未填写'}</p>
                 <p><b>可教范围：</b>${t.subject} (${t.grade})</p>
                 <p><b>位置：</b>${t.location || '未填写'}</p>
                 <p><b>形式：</b>${t.teachMode || '不限'}</p>
                 <p style="color:#ef4444; font-size:13px; background:#fee2e2; padding:8px; border-radius:6px; margin-top:10px;">
-                    <i class="fa-solid fa-circle-info"></i> 期望时薪：￥${t.pricePerHour} （具体价格与时间以双方沟通为准）
+                    <i class="fa-solid fa-circle-info"></i> 期望时薪：￥${t.pricePerHour} （以沟通为准）
                 </p>
-                <p><b>自我介绍：</b>${t.intro || '暂无'}</p>
+                <p><b>简介：</b>${t.intro || '暂无'}</p>
             `;
         const btn = document.getElementById('modal-action-btn');
         btn.innerText = "发私信给TA";
-        // ✅ 这里传 t.userId（账号ID），不再传 t.id（资料ID）
         btn.onclick = function() { startChat(t.userId, t.name); };
         document.getElementById('detail-modal').style.display = 'flex';
     }
@@ -375,7 +412,6 @@
         document.getElementById('modal-title').innerText = "家长需求详情";
         document.getElementById('modal-body').innerHTML = `
                 <p><b>称呼：</b>${p.name}</p>
-                <p><b>账号ID(userId)：</b>${p.userId}</p>
                 <p><b>需求：</b>${p.demandSubject} (${p.demandGrade})</p>
                 <p><b>位置：</b>${p.location || '未填写'}</p>
                 <p><b>形式：</b>${p.teachMode || '不限'}</p>
@@ -383,16 +419,14 @@
                 <p><b>要求：</b>${p.requirement || '暂无'}</p>
             `;
         const btn = document.getElementById('modal-action-btn');
-        btn.innerText = "立即接单 / 联系TA";
+        btn.innerText = "立即接单 / 联系";
         btn.onclick = function() {
-            if(confirm('确认接下这个订单吗？接单后该需求将从大厅下架。')) {
-                // ⚠️ finish接口依然使用 p.id（资料主键，用来下架这条需求记录，不能改！）
+            if(confirm('确认接下这个订单吗？接单后下架。')) {
                 fetch(`/api/parents/${p.id}/finish`, { method: 'PUT' })
                     .then(() => {
-                        alert('接单成功！快去私信联系家长吧。');
+                        alert('接单成功！');
                         closeModal();
                         loadHallData();
-                        // ✅ 聊天用 p.userId 账号ID
                         startChat(p.userId, p.name);
                     });
             }
@@ -402,7 +436,7 @@
 
     function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
 
-    // 核心：发起聊天（支持添加多个联系人，targetId = userId账号ID）
+    // 发起聊天
     function startChat(targetUserId, name) {
         closeModal();
         if (!contacts.find(c => c.id === targetUserId)) {
@@ -413,7 +447,7 @@
         switchPage('chat', document.querySelectorAll('.nav-item')[2]);
     }
 
-    // 渲染左侧联系人列表
+    // 渲染联系人
     function renderContacts() {
         const list = document.getElementById('contact-list');
         if (contacts.length === 0) {
@@ -426,22 +460,26 @@
             div.className = `contact-item ${document.getElementById('to-id').value == c.id ? 'active' : ''}`;
             div.innerHTML = `
                     <div style="font-weight:700; color:var(--text-main);">${c.name}</div>
-                    <div style="font-size:12px; color:#94a3b8; font-weight:600;">账号ID: ${c.id}</div>
+                    <div style="font-size:12px; color:#94a3b8; font-weight:600;">ID: ${c.id}</div>
                 `;
             div.onclick = () => switchContact(c.id, c.name);
             list.appendChild(div);
         });
     }
 
-    // 切换当前聊天对象（id是对方userId）
+    // 切换聊天对象 (带手机端适配)
     function switchContact(userId, name) {
         document.getElementById('to-id').value = userId;
         document.getElementById('current-chat-target').innerText = `正在与 [${name}] 聊天`;
+
+        // 手机端：如果有这个类，就会隐藏列表显示聊天窗口
+        document.getElementById('page-chat').classList.add('show-chat');
+
         renderContacts();
         loadHistory();
     }
 
-    // 从后端加载历史联系人
+    // 加载联系人
     function loadContacts() {
         if(!currentUserId) return;
         fetch(`/api/messages/contacts?userId=${currentUserId}`)
@@ -450,18 +488,15 @@
                 let newContacts = [];
                 ids.forEach(id => {
                     let existing = contacts.find(c => c.id === id);
-                    if(existing) {
-                        newContacts.push(existing);
-                    } else {
-                        newContacts.push({ id: id, name: "用户 " + id });
-                    }
+                    if(existing) newContacts.push(existing);
+                    else newContacts.push({ id: id, name: "用户 " + id });
                 });
                 contacts = newContacts;
                 renderContacts();
             });
     }
 
-    // ================= 5. 表单保存【重点改动：带上userId传给后端】 =================
+    // 表单保存
     function saveTeacherProfile() {
         const data = {
             userId: currentUserId,
@@ -496,7 +531,7 @@
             .then(() => { alert('需求发布成功！'); switchPage('hall', document.querySelectorAll('.nav-item')[0]); loadHallData(); });
     }
 
-    // ================= 6. 聊天逻辑 =================
+    // 聊天
     let ws = null;
     function connectWebSocket() {
         if(ws) ws.close();
@@ -524,7 +559,7 @@
             .then(data => {
                 chatBox.innerHTML = '';
                 if (data.length === 0) {
-                    chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; margin-top:40px;">暂无聊天记录，发个消息打个招呼吧~</div>`;
+                    chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; margin-top:40px;">暂无聊天记录</div>`;
                     return;
                 }
                 data.forEach(msg => {
@@ -538,7 +573,7 @@
     }
 
     function sendMessage() {
-        if (!ws || ws.readyState !== WebSocket.OPEN) { alert("请先点击右上角【连接/刷新】！"); return; }
+        if (!ws || ws.readyState !== WebSocket.OPEN) { alert("请先点击【连接/刷新】！"); return; }
         const toId = document.getElementById('to-id').value;
         const content = document.getElementById('msg-input').value.trim();
         if (!content || !toId) return;
