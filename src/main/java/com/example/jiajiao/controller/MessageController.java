@@ -1,14 +1,13 @@
 package com.example.jiajiao.controller;
 
 import com.example.jiajiao.entity.Message;
+import com.example.jiajiao.entity.User;
 import com.example.jiajiao.repository.MessageRepository;
+import com.example.jiajiao.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -16,6 +15,9 @@ public class MessageController {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // 1. 获取两人之间的历史聊天记录
     @GetMapping("/messages")
@@ -31,22 +33,35 @@ public class MessageController {
                 .toList();
     }
 
-    // 2. 【新增】获取我的所有历史联系人 (去重)
+    // 2. 获取我的历史联系人：带名字、身份、带前缀的编号
     @GetMapping("/messages/contacts")
-    public List<Long> getMyContacts(@RequestParam Long userId) {
-        List<Message> allMessages = messageRepository.findAll();
+    public List<Map<String, Object>> getMyContacts(@RequestParam Long userId) {
         Set<Long> contactIds = new HashSet<>();
-
-        for (Message msg : allMessages) {
-            // 如果是我发的，收件人是我的联系人
+        for (Message msg : messageRepository.findAll()) {
             if (msg.getFromUserId().equals(userId)) {
                 contactIds.add(msg.getToUserId());
             }
-            // 如果是发给我的，发件人是我的联系人
             if (msg.getToUserId().equals(userId)) {
                 contactIds.add(msg.getFromUserId());
             }
         }
-        return new ArrayList<>(contactIds);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Long id : contactIds) {
+            User u = userRepository.findById(id).orElse(null);
+            if (u == null) continue;
+
+            String role = u.getRole();
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", u.getId());
+            m.put("username", u.getUsername());
+            m.put("role", role);
+            // 老师显示 T-3，家长显示 P-2，界面上彻底分开
+            m.put("displayId", ("TEACHER".equals(role) ? "T-" : "P-") + u.getId());
+            result.add(m);
+        }
+
+        result.sort((a, b) -> Long.compare((Long) a.get("id"), (Long) b.get("id")));
+        return result;
     }
 }

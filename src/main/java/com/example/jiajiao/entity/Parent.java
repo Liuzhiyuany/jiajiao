@@ -9,32 +9,27 @@ import jakarta.persistence.Id;
 public class Parent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer status = 1;// 需求状态：1表示找老师中，0表示已结束（下架）
-    private Long id; // 家长的唯一编号
-    private String name; // 家长称呼
-    private String demandSubject; // 需求科目（如：数学）
-    private String demandGrade; // 需求年级（如：初二）
-    private Double budget; // 预算（时薪）
-    private String contactPhone; // 联系电话
-    private String requirement;
-    private String location;  // 家庭所在区域
-    private String teachMode; // 线上/线下
-    private Long userId;
+    private Long id;               // 主键（需求编号）
+
+    private Integer status = 1;    // 1=找老师中，0=已结束
+    private String name;           // 家长称呼
+    private String demandSubject;  // 需求科目
+    private String demandGrade;    // 需求年级
+    private Double budget;         // 预算时薪
+    private String contactPhone;   // 联系电话
+    private String requirement;    // 具体要求
+    private String location;       // 家庭所在区域
+    private String teachMode;      // 线上/线下
+    private Long userId;           // 发布需求的家长账号ID
+    private Long teacherUserId;    // 接单老师的账号ID（新增）
 
     public Parent() {}
-    public Integer getStatus() { return status; }
-    public void setStatus(Integer status) { this.status = status; }
-    // 加上对应的 Get/Set 方法
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
-
-    public String getTeachMode() { return teachMode; }
-    public void setTeachMode(String teachMode) { this.teachMode = teachMode; }
-    public String getRequirement() { return requirement; }
-    public void setRequirement(String requirement) { this.requirement = requirement; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -51,6 +46,18 @@ public class Parent {
     public String getContactPhone() { return contactPhone; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
 
-    public Long getUserId(){return userId;}
-    public void setUserId(Long userId){this.userId = userId; }
+    public String getRequirement() { return requirement; }
+    public void setRequirement(String requirement) { this.requirement = requirement; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getTeachMode() { return teachMode; }
+    public void setTeachMode(String teachMode) { this.teachMode = teachMode; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
+    public Long getTeacherUserId() { return teacherUserId; }
+    public void setTeacherUserId(Long teacherUserId) { this.teacherUserId = teacherUserId; }
 }
