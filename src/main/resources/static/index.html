@@ -200,6 +200,16 @@
             <div class="page-header"><div class="page-title" id="form-title">发布信息</div></div>
 
             <div class="form-container hidden" id="teacher-form">
+                <div style="background:#dcfce7; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <div style="font-weight:700; color:#10b981; margin-bottom:8px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI 帮我写资料
+                    </div>
+                    <textarea id="ai-teacher-text" rows="3" placeholder="随便说说，例如：我是东北大学大二学生，能教初中数学和高中物理，浑南区可以上门，一小时150，有一年家教经验" style="background:#fff;"></textarea>
+                    <button class="btn btn-primary" style="margin-top:10px; background:#10b981;" onclick="aiParseTeacher()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 一键生成资料
+                    </button>
+                    <div id="ai-teacher-status" style="font-size:13px; color:#64748b; margin-top:8px;"></div>
+                </div>
                 <div class="form-grid">
                     <input type="text" id="t-name" placeholder="姓名">
                     <input type="text" id="t-school" placeholder="就读学校">
@@ -214,6 +224,16 @@
             </div>
 
             <div class="form-container hidden" id="parent-form">
+                <div style="background:#e0e7ff; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <div style="font-weight:700; color:#4f46e5; margin-bottom:8px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI 帮我写需求
+                    </div>
+                    <textarea id="ai-raw-text" rows="3" placeholder="用大白话说，例如：想找个浑南区的数学老师，孩子初二，一小时120左右，线上线下都行" style="background:#fff;"></textarea>
+                    <button class="btn btn-primary" style="margin-top:10px;" onclick="aiParseDemand()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 一键智能识别
+                    </button>
+                    <div id="ai-status" style="font-size:13px; color:#64748b; margin-top:8px;"></div>
+                </div>
                 <div class="form-grid">
                     <input type="text" id="p-name" placeholder="您的称呼">
                     <input type="text" id="p-subject" placeholder="需求科目（如：初中数学）">
@@ -688,6 +708,63 @@
                 loadHallData();
             })
             .catch(() => alert('网络异常'));
+    }
+    // AI：家长大白话 → 自动填需求表单
+    function aiParseDemand() {
+        const raw = document.getElementById('ai-raw-text').value.trim();
+        if (!raw) { alert('请先用大白话描述你的需求'); return; }
+        const s = document.getElementById('ai-status');
+        s.innerText = 'AI 正在理解你的需求...';
+
+        fetch('/api/ai/parse-demand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'rawText=' + encodeURIComponent(raw)
+        })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('p-subject').value = d.demandSubject || '';
+                document.getElementById('p-grade').value = d.demandGrade || '';
+                document.getElementById('p-budget').value = d.budget || '';
+                document.getElementById('p-location').value = d.location || '';
+                const sel = document.getElementById('p-mode');
+                const m = d.teachMode || '';
+                if (m.includes('线上')) sel.value = '线上';
+                else if (m.includes('线下')) sel.value = '线下';
+                else sel.value = '不限';
+                s.innerText = '✅ 已自动填好，检查后点「立即发布」';
+            })
+            .catch(() => { s.innerText = '❌ AI 识别失败'; });
+    }
+
+    // AI：老师大白话 → 自动填资料表单
+    function aiParseTeacher() {
+        const raw = document.getElementById('ai-teacher-text').value.trim();
+        if (!raw) { alert('请先用大白话介绍一下自己'); return; }
+        const s = document.getElementById('ai-teacher-status');
+        s.innerText = 'AI 正在整理你的资料...';
+
+        fetch('/api/ai/parse-teacher', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'rawText=' + encodeURIComponent(raw)
+        })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('t-school').value = d.school || '';
+                document.getElementById('t-subject').value = d.subject || '';
+                document.getElementById('t-grade').value = d.grade || '';
+                document.getElementById('t-price').value = d.pricePerHour || '';
+                document.getElementById('t-location').value = d.location || '';
+                document.getElementById('t-intro').value = d.intro || '';
+                const sel = document.getElementById('t-mode');
+                const m = d.teachMode || '';
+                if (m.includes('线上')) sel.value = '线上';
+                else if (m.includes('线下')) sel.value = '线下';
+                else sel.value = '不限';
+                s.innerText = '✅ 已自动填好，检查后点「保存资料」';
+            })
+            .catch(() => { s.innerText = '❌ AI 生成失败'; });
     }
 
     // 表单保存
