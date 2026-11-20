@@ -15,6 +15,8 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private com.example.jiajiao.security.JwtUtil jwtUtil;
 
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody User user) {
@@ -43,6 +45,7 @@ public class AuthController {
         // 密码比对
         if (passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
             result.put("success", true);
+            result.put("token", jwtUtil.generate(dbUser.getId(), dbUser.getUsername(), dbUser.getRole()));
             result.put("message", "登录成功！");
             result.put("role", dbUser.getRole());
             result.put("userId", dbUser.getId());

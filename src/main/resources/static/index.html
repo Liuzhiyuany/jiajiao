@@ -286,6 +286,25 @@
 </div>
 
 <script>
+    // 所有 /api 请求自动带上 token
+    const _origFetch = window.fetch;
+    window.fetch = function(url, opts) {
+        opts = opts || {};
+        if (typeof url === 'string' && url.indexOf('/api') === 0) {
+            opts.headers = opts.headers || {};
+            const t = sessionStorage.getItem('token');
+            if (t) opts.headers['Authorization'] = 'Bearer ' + t;
+        }
+        return _origFetch(url, opts).then(res => {
+            if (res.status === 401) {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('loginUser');
+                alert('登录已过期，请重新登录');
+                location.reload();
+            }
+            return res;
+        });
+    };
     let currentUserId = null;
     let currentRole = null;
     let contacts = [];
@@ -322,9 +341,10 @@
             .then(res => res.json()).then(res => {
             if (res.success) {
                 // 记住登录状态：刷新网页也不会丢
-                localStorage.setItem('loginUser', JSON.stringify({
+                sessionStorage.setItem('loginUser', JSON.stringify({
                     userId: res.userId, username: res.username, role: res.role
                 }));
+                sessionStorage.setItem('token', res.token || '');
                 enterApp(res);
             } else {
                 alert(res.message);
@@ -347,6 +367,7 @@
             document.getElementById('teacher-form').classList.remove('hidden');
             document.getElementById('nav-form-text').innerText = '完善资料';
             document.getElementById('hall-title').innerText = '📢 家长大厅';
+            loadMyTeacherProfile();
         } else {
             document.getElementById('parent-form').classList.remove('hidden');
             document.getElementById('nav-form-text').innerText = '发布需求';
@@ -359,18 +380,18 @@
 
     // 页面加载时：如果浏览器里有登录记录，自动恢复
     function restoreSession() {
-        const saved = localStorage.getItem('loginUser');
+        const saved = sessionStorage.getItem('loginUser');
         if (!saved) return;
         try {
             const user = JSON.parse(saved);
             if (user && user.userId) enterApp(user);
         } catch (e) {
-            localStorage.removeItem('loginUser');
+            sessionStorage.removeItem('loginUser');
         }
     }
 
     function logout() {
-        localStorage.removeItem('loginUser');
+        sessionStorage.removeItem('loginUser');
         location.reload();
     }
 
@@ -485,7 +506,7 @@
                         })
                         .catch(() => {});
                 })
-                .catch(() => alert('网络异常，请确认后端已启动'));
+                .catch(e => alert('出错了：' + e + '\n' + (e.stack || '')));
         };
         document.getElementById('detail-modal').style.display = 'flex';
     }
@@ -500,7 +521,7 @@
             renderContacts();
         }
         switchContact(targetUserId, name);
-        switchPage('chat', document.querySelectorAll('.nav-item'));
+        switchPage('chat', document.getElementById('nav-chat'));
     }
 
     // 渲染联系人（带身份标签 + 前缀编号）
@@ -525,6 +546,7 @@
             div.innerHTML = `
                     <div style="font-weight:700; color:var(--text-main); display:flex; align-items:center;">
                         ${shownName} ${c.role ? badge : ''}
+                                                ${c.unread > 0 ? `<span style="margin-left:auto; background:#ef4444; color:#fff; font-size:11px; font-weight:700; min-width:18px; height:18px; line-height:18px; text-align:center; border-radius:9px; padding:0 5px;">${c.unread}</span>` : ''}
                     </div>
                     <div style="font-size:12px; color:#94a3b8; font-weight:600;">${displayId}</div>
                 `;
@@ -541,21 +563,75 @@
         document.getElementById('page-chat').classList.add('show-chat');
         renderContacts();
         loadHistory();
+        fetch(`/api/messages/read?userId=${currentUserId}&contactId=${userId}`, { method: 'PUT' })
+            .then(() => loadUnread())
+            .catch(() => {});
     }
 
-    // 加载联系人（后端返回 {id, username, role, displayId}）
+    // 加载联系人 + 顺便拉未读数
     function loadContacts() {
         if(!currentUserId) return;
         fetch(`/api/messages/contacts?userId=${currentUserId}`)
             .then(res => res.json())
             .then(data => {
                 contacts = data.map(u => ({
-                    id: u.id,
-                    username: u.username,
-                    role: u.role,
-                    displayId: u.displayId
+                    id: u.id, username: u.username, role: u.role, displayId: u.displayId, unread: 0
                 }));
                 renderContacts();
+                loadUnread();
+            })
+            .catch(() => {});
+    }
+
+    // 拉取未读数量，刷新联系人红点和左侧导航总红点
+    function loadUnread() {
+        if(!currentUserId) return;
+        fetch(`/api/messages/unread?userId=${currentUserId}`)
+            .then(r => r.json())
+            .then(list => {
+                contacts.forEach(c => c.unread = 0);
+                list.forEach(item => {
+                    const c = contacts.find(x => x.id === item.contactId);
+                    if (c) c.unread = item.count;
+                });
+                renderContacts();
+
+                const total = list.reduce((s, i) => s + i.count, 0);
+                const nav = document.getElementById('nav-chat');
+                if (!nav) return;
+                let dot = document.getElementById('nav-chat-dot');
+                if (total > 0) {
+                    if (!dot) {
+                        dot = document.createElement('span');
+                        dot.id = 'nav-chat-dot';
+                        dot.style.cssText = 'margin-left:auto; background:#ef4444; color:#fff; font-size:11px; font-weight:700; min-width:18px; height:18px; line-height:18px; text-align:center; border-radius:9px; padding:0 5px;';
+                        nav.appendChild(dot);
+                    }
+                    dot.innerText = total;
+                } else if (dot) {
+                    dot.remove();
+                }
+            })
+            .catch(() => {});
+    }
+    // 老师：进入时自动回填自己已有的资料
+    function loadMyTeacherProfile() {
+        fetch(`/api/teacher/my?userId=${currentUserId}`)
+            .then(r => r.json())
+            .then(t => {
+                if (!t || !t.id) return;
+                document.getElementById('t-name').value = t.name || '';
+                document.getElementById('t-school').value = t.school || '';
+                document.getElementById('t-subject').value = t.subject || '';
+                document.getElementById('t-grade').value = t.grade || '';
+                document.getElementById('t-price').value = t.pricePerHour || '';
+                document.getElementById('t-location').value = t.location || '';
+                document.getElementById('t-intro').value = t.intro || '';
+                const sel = document.getElementById('t-mode');
+                const mode = t.teachMode || '';
+                if (mode.includes('线上')) sel.value = '线上';
+                else if (mode.includes('线下')) sel.value = '线下';
+                else sel.value = '不限';
             })
             .catch(() => {});
     }
@@ -629,7 +705,14 @@
             contactPhone: "13800000000"
         };
         fetch('/api/teacher', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-            .then(() => { alert('资料保存成功！'); switchPage('hall', document.querySelectorAll('.nav-item')[0]); loadHallData(); });
+            .then(res => res.json())
+            .then(result => {
+                if (result && result.success === false) { alert(result.message); return; }
+                alert('资料保存成功！');
+                switchPage('hall', document.getElementById('nav-hall') || document.querySelectorAll('.nav-item')[0]);
+                loadHallData();
+            })
+            .catch(() => alert('网络异常，请确认后端已启动'));
     }
 
     function saveParentDemand() {
@@ -646,7 +729,14 @@
             status: 1
         };
         fetch('/api/parent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-            .then(() => { alert('需求发布成功！'); switchPage('hall', document.querySelectorAll('.nav-item')[0]); loadHallData(); });
+            .then(res => res.json())
+            .then(result => {
+                if (result && result.success === false) { alert(result.message); return; }
+                alert('需求发布成功！');
+                switchPage('hall', document.querySelectorAll('.nav-item')[0]);
+                loadHallData();
+            })
+            .catch(() => alert('网络异常，请确认后端已启动'));
     }
 
     // 聊天
@@ -661,7 +751,7 @@
             status.innerText = "在线"; status.style.color = "#10b981";
             if(document.getElementById('to-id').value) loadHistory();
         };
-        ws.onmessage = (event) => addMessage("theirs", event.data);
+        ws.onmessage = (event) => { addMessage("theirs", event.data); loadUnread(); };
         ws.onclose = () => {
             const status = document.getElementById('conn-status');
             status.innerText = "未连接"; status.style.color = "#ef4444";

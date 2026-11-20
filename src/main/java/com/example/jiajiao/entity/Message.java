@@ -18,6 +18,7 @@ public class Message {
     private String toRole;   // 接收者身份
     private String content;  // 聊天内容
     private LocalDateTime sendTime; // 发送时间
+    private Boolean isRead = false; // 是否已读
 
     public Message() {}
 
@@ -41,4 +42,6 @@ public class Message {
 
     public LocalDateTime getSendTime() { return sendTime; }
     public void setSendTime(LocalDateTime sendTime) { this.sendTime = sendTime; }
+    public Boolean getIsRead() { return isRead; }
+    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
 }

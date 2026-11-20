@@ -56,12 +56,47 @@ public class MessageController {
             m.put("id", u.getId());
             m.put("username", u.getUsername());
             m.put("role", role);
-            // 老师显示 T-3，家长显示 P-2，界面上彻底分开
             m.put("displayId", ("TEACHER".equals(role) ? "T-" : "P-") + u.getId());
             result.add(m);
         }
 
         result.sort((a, b) -> Long.compare((Long) a.get("id"), (Long) b.get("id")));
         return result;
+    }
+
+    // 3. 未读消息统计：返回 [{contactId, count}, ...]
+    @GetMapping("/messages/unread")
+    public List<Map<String, Object>> unreadCount(@RequestParam Long userId) {
+        Map<Long, Long> counts = new HashMap<>();
+        for (Message m : messageRepository.findAll()) {
+            if (userId.equals(m.getToUserId()) && !Boolean.TRUE.equals(m.getIsRead())) {
+                counts.merge(m.getFromUserId(), 1L, Long::sum);
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        counts.forEach((contactId, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("contactId", contactId);
+            map.put("count", count);
+            result.add(map);
+        });
+        return result;
+    }
+
+    // 4. 打开对话时，把对方发给我的消息全部标记为已读
+    @PutMapping("/messages/read")
+    public int markRead(@RequestParam Long userId, @RequestParam Long contactId) {
+        int n = 0;
+        for (Message m : messageRepository.findAll()) {
+            if (userId.equals(m.getToUserId())
+                    && contactId.equals(m.getFromUserId())
+                    && !Boolean.TRUE.equals(m.getIsRead())) {
+                m.setIsRead(true);
+                messageRepository.save(m);
+                n++;
+            }
+        }
+        return n;
     }
 }
