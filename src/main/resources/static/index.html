@@ -69,7 +69,8 @@
         .form-grid textarea { grid-column: span 2; }
 
         /* 聊天页 (双栏设计) */
-        #page-chat { padding: 0; display: flex; flex-direction: row; background: #fff; }
+        #page-chat { padding: 0; flex-direction: row; background: #fff; }
+        #page-chat.active { display: flex; }
         .chat-list { width: 320px; border-right: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column;}
         .chat-list-header { padding: 24px; font-weight: 800; border-bottom: 1px solid var(--border); font-size: 18px; color: var(--text-main);}
         .contact-item { padding: 18px 24px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
@@ -105,18 +106,24 @@
 
             /* 2. 侧边栏变成底部导航栏 */
             .sidebar {
-                width: 100%; height: 65px; flex-direction: row;
+                width: 100%; flex-direction: row;
                 position: fixed; bottom: 0; left: 0;
+                height: auto; min-height: 65px;
+                padding-bottom: env(safe-area-inset-bottom);
                 border-top: 1px solid rgba(255,255,255,0.1); z-index: 999;
             }
             .sidebar-header, .sidebar-footer { display: none; }
             .nav-menu { flex-direction: row; padding: 0; width: 100%; justify-content: space-around; align-items: center; gap: 0;}
             .nav-item { flex-direction: column; padding: 8px 0; font-size: 11px; gap: 4px; border-radius: 0; flex: 1; text-align: center; justify-content: center;}
             .nav-item i { font-size: 20px; }
-            .nav-item.active { background: transparent; color: var(--primary); box-shadow: none; }
+            .nav-item.active { background: transparent; color: var(--primary); box-shadow: none; position: relative; }
+            .nav-item.active::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+                width: 22px; height: 3px; border-radius: 0 0 3px 3px; background: var(--primary); }
+            input, select, textarea { font-size: 16px; }   /* 防 iOS 聚焦时页面自动放大 */
+            .chat-input-box input { font-size: 16px; }
 
             /* 3. 主内容区留出底部导航的高度 */
-            .main-content { padding-bottom: 65px; }
+            .main-content { padding-bottom: calc(65px + env(safe-area-inset-bottom)); }
             .page { padding: 20px 15px; }
 
             /* 4. 资源大厅改为单列卡片 */
@@ -143,9 +150,34 @@
             .chat-input-box { padding: 15px; }
             .chat-area { padding: 15px; }
         }
+        /* ===== Toast 轻提示 ===== */
+        #toast-wrap { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+            z-index: 2000; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; pointer-events: none; }
+        .toast { background: rgba(15,23,42,.93); color: #fff; padding: 12px 20px; border-radius: 12px;
+            font-size: 14px; max-width: 82vw; line-height: 1.55; text-align: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,.28); animation: toastIn .22s ease; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== 加载动画 ===== */
+        .spinner { width: 24px; height: 24px; margin: 0 auto 12px; border: 3px solid #e2e8f0;
+            border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== 统一细节 ===== */
+        body { -webkit-tap-highlight-color: transparent; }
+        .card-price, .card-title { font-variant-numeric: tabular-nums; }
+        .btn { letter-spacing: .2px; }
+        .btn:active { transform: translateY(1px) scale(.99); }
+        .card { transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease; }
+        .page-title { letter-spacing: -0.5px; }
+        input::placeholder, textarea::placeholder { color: #a8b3c4; }
     </style>
 </head>
 <body>
+<div id="msg-banner" onclick="goChatFromBanner()" style="display:none; position:fixed; top:0; left:0; right:0; z-index:1500; background:var(--primary); color:#fff; padding:12px 16px; font-size:14px; text-align:center; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.18);">
+    <i class="fa-solid fa-bell"></i> 有新私信，点击查看
+</div>
 
 <!-- 登录页 -->
 <div id="auth-page">
@@ -165,8 +197,8 @@
         <div class="sidebar-header"><i class="fa-solid fa-graduation-cap"></i> 致学优教</div>
         <div class="nav-menu">
             <div class="nav-item active" onclick="switchPage('hall', this)"><i class="fa-solid fa-house"></i> 资源大厅</div>
-            <div class="nav-item" onclick="switchPage('form', this)"><i class="fa-solid fa-pen-to-square"></i> <span id="nav-form-text">发布信息</span></div>
-            <div class="nav-item hidden" id="nav-mydemands" onclick="switchPage('mydemands', this); loadMyDemands()"><i class="fa-solid fa-clipboard-list"></i> 我的需求</div>
+            <div class="nav-item" id="nav-form" onclick="switchPage('form', this)"><i class="fa-solid fa-pen-to-square"></i> <span id="nav-form-text">发布信息</span></div>
+            <div class="nav-item" id="nav-mine" onclick="switchPage('mine', this); loadMine()"><i class="fa-solid fa-user"></i> 我的</div>
             <div class="nav-item" id="nav-chat" onclick="switchPage('chat', this); loadContacts()"><i class="fa-solid fa-comment-dots"></i> 消息中心</div>
         </div>
         <div class="sidebar-footer">
@@ -279,17 +311,49 @@
                     <button class="btn btn-primary" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
-            <!-- 4. 我的需求（仅家长可见） -->
-            <div id="page-mydemands" class="page">
+        </div>
+
+        <!-- 4. 我的（个人中心：退出登录 + 我发布的内容） -->
+
+            <div id="page-mine" class="page">
                 <div class="page-header">
-                    <div class="page-title">我的需求</div>
-                    <button class="btn btn-primary" style="width:auto; padding:10px 18px;" onclick="loadMyDemands()">
+                    <div class="page-title">我的</div>
+                    <button class="btn btn-primary" style="width:auto; padding:10px 18px;" onclick="loadMine()">
                         <i class="fa-solid fa-rotate"></i> 刷新
                     </button>
                 </div>
-                <div class="grid" id="mydemands-content"></div>
+
+                <div class="card" style="cursor:default; margin-bottom:20px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <i class="fa-solid fa-circle-user" style="font-size:44px; color:var(--primary);"></i>
+                        <div>
+                            <div style="font-size:18px; font-weight:800;" id="mine-name">-</div>
+                            <div style="font-size:13px; color:#94a3b8; margin-top:6px;">
+                                <span id="mine-role-badge"></span>
+                                <span style="margin-left:10px;">ID: <span id="mine-id">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn" style="margin-top:18px; width:100%; background:#fef2f2; color:#ef4444; border:1px solid #fecaca;" onclick="logout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> 退出登录
+                    </button>
+                </div>
+
+                <div class="card" style="cursor:default; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div>
+                            <div style="font-weight:700; font-size:15px;">
+                                <i class="fa-solid fa-bell" style="color:var(--primary);"></i> 消息通知
+                            </div>
+                            <div id="notify-status" style="font-size:13px; color:#94a3b8; margin-top:6px; line-height:1.5;">检测中...</div>
+                        </div>
+                        <button class="btn btn-primary" id="notify-btn" style="width:auto; padding:9px 16px; font-size:13px; flex-shrink:0;" onclick="requestNotify()">开启</button>
+                    </div>
+                </div>
+
+                <div class="page-title" style="font-size:16px; margin-bottom:14px;" id="mine-section-title">我发布的内容</div>
+                <div class="grid" id="mine-content"></div>
             </div>
-        </div>
     </main>
 </div>
 
@@ -319,12 +383,31 @@
             if (res.status === 401) {
                 sessionStorage.removeItem('token');
                 sessionStorage.removeItem('loginUser');
-                alert('登录已过期，请重新登录');
+                toast('登录已过期，请重新登录');
                 location.reload();
             }
             return res;
         });
     };
+    // 轻提示，替代 alert（底部黑色小条，不打断操作）
+    function toast(msg) {
+        let wrap = document.getElementById('toast-wrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'toast-wrap';
+            document.body.appendChild(wrap);
+        }
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.innerText = msg == null ? '' : String(msg);
+        wrap.appendChild(el);
+        setTimeout(() => {
+            el.style.transition = 'opacity .2s';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 220);
+        }, 2200);
+    }
+
     let currentUserId = null;
     let currentRole = null;
     let contacts = [];
@@ -339,6 +422,7 @@
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
         if(element) element.classList.add('active');
+        if (pageId === 'chat') { const b = document.getElementById('msg-banner'); if (b) b.style.display = 'none'; }
     }
 
     // 登录注册
@@ -349,7 +433,7 @@
             role: document.getElementById('auth-role').value
         };
         fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-            .then(res => res.json()).then(res => alert(res.message));
+            .then(res => res.json()).then(res => toast(res.message));
     }
 
     function login() {
@@ -367,7 +451,7 @@
                 sessionStorage.setItem('token', res.token || '');
                 enterApp(res);
             } else {
-                alert(res.message);
+                toast(res.message);
             }
         });
     }
@@ -391,11 +475,22 @@
         } else {
             document.getElementById('parent-form').classList.remove('hidden');
             document.getElementById('nav-form-text').innerText = '发布需求';
-            document.getElementById('nav-mydemands').classList.remove('hidden');
             document.getElementById('hall-title').innerText = '🏆 老师大厅';
         }
+
+        // 个人中心信息
+        const isT = currentRole === 'TEACHER';
+        document.getElementById('mine-name').innerText = user.username;
+        document.getElementById('mine-id').innerText = user.userId;
+        document.getElementById('mine-role-badge').innerHTML = isT
+            ? '<span style="color:#10b981; background:#dcfce7; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px;">老师</span>'
+            : '<span style="color:#ef4444; background:#fee2e2; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px;">家长</span>';
+        document.getElementById('mine-section-title').innerText = isT ? '我的老师资料' : '我发布的需求';
+
         loadHallData();
         loadContacts();
+        initNotify();
+        refreshNotifyStatus();
     }
 
     // 页面加载时：如果浏览器里有登录记录，自动恢复
@@ -423,7 +518,7 @@
         const sub = document.getElementById('search-subject').value.trim();
         const grd = document.getElementById('search-grade').value.trim();
         const contentDiv = document.getElementById('hall-content');
-        contentDiv.innerHTML = '<div style="text-align:center; width:100%; padding:60px; color:#94a3b8;">加载中...</div>';
+        contentDiv.innerHTML = '<div style="text-align:center; width:100%; padding:60px; color:#94a3b8;"><div class="spinner"></div>加载中...</div>';
 
         const apiUrl = currentRole === 'TEACHER'
             ? `/api/parents?subject=${sub}&grade=${grd}`
@@ -505,7 +600,7 @@
             fetch(`/api/apply?teacherUserId=${currentUserId}&parentDemandId=${p.id}`, { method: 'POST' })
                 .then(res => res.json())
                 .then(result => {
-                    if (!result.success) { alert(result.message || '申请失败'); return; }
+                    if (!result.success) { toast(result.message || '申请失败'); return; }
                     closeModal();
                     startChat(p.userId, p.name);
                     if (!ws || ws.readyState !== WebSocket.OPEN) connectWebSocket();
@@ -526,7 +621,7 @@
                         })
                         .catch(() => {});
                 })
-                .catch(e => alert('出错了：' + e + '\n' + (e.stack || '')));
+                .catch(e => toast('出错了：' + e + '\n' + (e.stack || '')));
         };
         document.getElementById('detail-modal').style.display = 'flex';
     }
@@ -655,11 +750,149 @@
             })
             .catch(() => {});
     }
+    // ================= 消息通知 =================
+    function initNotify() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    function showNotify(title, body) {
+        const inChat = document.getElementById('page-chat').classList.contains('active');
+        if (!document.hidden && inChat) return;
+
+        // ① 优先用系统通知（仅 https 或 localhost 可用）
+        if (window.isSecureContext && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+                const n = new Notification(title, { body: body, tag: 'jiajiao-msg' });
+                n.onclick = function () { window.focus(); goChatFromBanner(); n.close(); };
+                return;
+            } catch (e) { /* 降级到横幅 */ }
+        }
+
+        // ② 降级方案：页面横幅 + 标题闪烁（http 明文页面也能用）
+        showBanner(body);
+        clearInterval(window.__titleTimer);
+        let on = false;
+        window.__titleTimer = setInterval(() => {
+            document.title = on ? '致学优教' : '● 新私信';
+            on = !on;
+        }, 900);
+        setTimeout(() => {
+            clearInterval(window.__titleTimer);
+            document.title = '致学优教';
+        }, 6000);
+    }
+
+    function showBanner(text) {
+        const b = document.getElementById('msg-banner');
+        if (!b) return;
+        b.innerHTML = '<i class="fa-solid fa-bell"></i> 有新私信：' + String(text || '').slice(0, 24);
+        b.style.display = 'block';
+        clearTimeout(window.__bannerTimer);
+        window.__bannerTimer = setTimeout(() => { b.style.display = 'none'; }, 8000);
+    }
+
+    function goChatFromBanner() {
+        const b = document.getElementById('msg-banner');
+        if (b) b.style.display = 'none';
+        switchPage('chat', document.getElementById('nav-chat'));
+        loadContacts();
+    }
+
+    function refreshNotifyStatus() {
+        const el = document.getElementById('notify-status');
+        const btn = document.getElementById('notify-btn');
+        if (!el) return;
+
+        if (!('Notification' in window)) {
+            el.innerText = '当前浏览器不支持通知，建议用安卓 Chrome 或把网页添加到主屏幕';
+            if (btn) btn.style.display = 'none';
+            return;
+        }
+        if (!window.isSecureContext) {
+            el.innerHTML = '<span style="color:#f59e0b; font-weight:700;">当前是 http 访问</span><br>浏览器禁止通知，已自动改为「页面顶部横幅 + 标题闪烁」提醒';
+            if (btn) { btn.innerText = '不可用'; btn.disabled = true; btn.style.opacity = '.55'; }
+            return;
+        }
+
+        const p = Notification.permission;
+        if (p === 'granted') {
+            el.innerHTML = '<span style="color:#10b981; font-weight:700;">已开启</span>，收到私信会弹通知';
+            if (btn) { btn.innerText = '已开启'; btn.disabled = true; btn.style.opacity = '.55'; }
+        } else if (p === 'denied') {
+            el.innerHTML = '<span style="color:#ef4444; font-weight:700;">已被浏览器阻止</span><br>点地址栏左侧的锁图标 → 通知 → 允许';
+            if (btn) { btn.innerText = '重新申请'; btn.disabled = false; btn.style.opacity = '1'; }
+        } else {
+            el.innerText = '未开启，点右侧按钮开启（第一次会弹权限询问）';
+            if (btn) { btn.innerText = '开启'; btn.disabled = false; btn.style.opacity = '1'; }
+        }
+    }
+
+    function requestNotify() {
+        if (!('Notification' in window)) { toast('当前浏览器不支持消息通知'); return; }
+
+        Notification.requestPermission().then(() => {
+            refreshNotifyStatus();
+            if (Notification.permission === 'granted') {
+                toast('已开启消息通知');
+                showNotify('通知已开启', '有人给你发私信时会在这里提醒你');
+            } else if (Notification.permission === 'denied') {
+                toast('通知被浏览器阻止了，请在地址栏左侧锁图标里手动允许');
+            }
+        });
+    }
+
+    // ================= 我的（个人中心）=================
+    function loadMine() {
+        refreshNotifyStatus();
+        const box = document.getElementById('mine-content');
+        if (!box) return;
+        box.innerHTML = '<div style="text-align:center; width:100%; padding:40px; color:#94a3b8;"><div class="spinner"></div>加载中...</div>';
+
+        if (currentRole === 'TEACHER') {
+            fetch(`/api/teacher/my?userId=${currentUserId}`)
+                .then(r => r.json())
+                .then(t => {
+                    if (!t || !t.id) {
+                        box.innerHTML = `<div style="text-align:center; width:100%; padding:40px; color:#94a3b8;">
+                            你还没有发布老师资料
+                            <div style="margin-top:16px;">
+                                <button class="btn btn-primary" style="width:auto; padding:10px 18px;" onclick="switchPage('form', document.getElementById('nav-form'))">去发布资料</button>
+                            </div>
+                        </div>`;
+                        return;
+                    }
+                    box.innerHTML = `
+                    <div class="card" style="cursor:default;">
+                        <div class="card-title">
+                            <span>${t.name || '未填姓名'}
+                                <span style="font-size:12px; font-weight:700; color:#10b981; background:#dcfce7; padding:2px 6px; border-radius:4px; margin-left:6px;">老师</span>
+                            </span>
+                            <span class="card-price">￥${t.pricePerHour || '-'}</span>
+                        </div>
+                        <div class="tags">
+                            <span class="tag">${t.subject || '未填科目'}</span>
+                            <span class="tag">${t.grade || '未填年级'}</span>
+                            <span class="tag"><i class="fa-solid fa-location-dot"></i> ${t.location || '区域不限'}</span>
+                            <span class="tag"><i class="fa-solid fa-laptop"></i> ${t.teachMode || '形式不限'}</span>
+                        </div>
+                        <p style="font-size:13px; color:#64748b; line-height:1.7; margin-bottom:14px;">${t.intro || '暂无自我介绍'}</p>
+                        <button class="btn btn-primary" style="width:auto; padding:8px 16px;" onclick="switchPage('form', document.getElementById('nav-form'))">编辑资料</button>
+                    </div>`;
+                })
+                .catch(() => { box.innerHTML = '<div style="text-align:center; width:100%; padding:40px; color:#ef4444;">加载失败</div>'; });
+        } else {
+            loadMyDemands();
+        }
+    }
+
     // ================= 我的需求（家长端）=================
     function loadMyDemands() {
-        const box = document.getElementById('mydemands-content');
+        const box = document.getElementById('mine-content');
         if(!box) return;
-        box.innerHTML = '<div style="text-align:center; width:100%; padding:40px; color:#94a3b8;">加载中...</div>';
+        box.innerHTML = '<div style="text-align:center; width:100%; padding:40px; color:#94a3b8;"><div class="spinner"></div>加载中...</div>';
 
         fetch(`/api/my-demands?userId=${currentUserId}`)
             .then(res => res.json())
@@ -703,16 +936,16 @@
         fetch(`/api/parents/${id}/finish?userId=${currentUserId}`, { method: 'PUT' })
             .then(res => res.json())
             .then(result => {
-                alert(result.message || '操作完成');
+                toast(result.message || '操作完成');
                 loadMyDemands();
                 loadHallData();
             })
-            .catch(() => alert('网络异常'));
+            .catch(() => toast('网络异常'));
     }
     // AI：家长大白话 → 自动填需求表单
     function aiParseDemand() {
         const raw = document.getElementById('ai-raw-text').value.trim();
-        if (!raw) { alert('请先用大白话描述你的需求'); return; }
+        if (!raw) { toast('请先用大白话描述你的需求'); return; }
         const s = document.getElementById('ai-status');
         s.innerText = 'AI 正在理解你的需求...';
 
@@ -740,7 +973,7 @@
     // AI：老师大白话 → 自动填资料表单
     function aiParseTeacher() {
         const raw = document.getElementById('ai-teacher-text').value.trim();
-        if (!raw) { alert('请先用大白话介绍一下自己'); return; }
+        if (!raw) { toast('请先用大白话介绍一下自己'); return; }
         const s = document.getElementById('ai-teacher-status');
         s.innerText = 'AI 正在整理你的资料...';
 
@@ -784,12 +1017,13 @@
         fetch('/api/teacher', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
             .then(res => res.json())
             .then(result => {
-                if (result && result.success === false) { alert(result.message); return; }
-                alert('资料保存成功！');
-                switchPage('hall', document.getElementById('nav-hall') || document.querySelectorAll('.nav-item')[0]);
+                if (result && result.success === false) { toast(result.message); return; }
+                toast('资料保存成功！');
+                switchPage('mine', document.getElementById('nav-mine'));
+                loadMine();
                 loadHallData();
             })
-            .catch(() => alert('网络异常，请确认后端已启动'));
+            .catch(() => toast('网络异常，请确认后端已启动'));
     }
 
     function saveParentDemand() {
@@ -808,12 +1042,13 @@
         fetch('/api/parent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
             .then(res => res.json())
             .then(result => {
-                if (result && result.success === false) { alert(result.message); return; }
-                alert('需求发布成功！');
-                switchPage('hall', document.querySelectorAll('.nav-item')[0]);
+                if (result && result.success === false) { toast(result.message); return; }
+                toast('需求发布成功！');
+                switchPage('mine', document.getElementById('nav-mine'));
+                loadMine();
                 loadHallData();
             })
-            .catch(() => alert('网络异常，请确认后端已启动'));
+            .catch(() => toast('网络异常，请确认后端已启动'));
     }
 
     // 聊天
@@ -828,7 +1063,12 @@
             status.innerText = "在线"; status.style.color = "#10b981";
             if(document.getElementById('to-id').value) loadHistory();
         };
-        ws.onmessage = (event) => { addMessage("theirs", event.data); loadUnread(); };
+        ws.onmessage = (event) => {
+            const text = event.data;
+            addMessage("theirs", text);
+            loadUnread();
+            showNotify('收到新私信', text);
+        };
         ws.onclose = () => {
             const status = document.getElementById('conn-status');
             status.innerText = "未连接"; status.style.color = "#ef4444";
@@ -860,7 +1100,7 @@
     }
 
     function sendMessage() {
-        if (!ws || ws.readyState !== WebSocket.OPEN) { alert("请先点击【连接/刷新】！"); return; }
+        if (!ws || ws.readyState !== WebSocket.OPEN) { toast("请先点击【连接/刷新】！"); return; }
         const toId = document.getElementById('to-id').value;
         const content = document.getElementById('msg-input').value.trim();
         if (!content || !toId) return;
